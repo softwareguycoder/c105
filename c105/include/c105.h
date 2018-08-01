@@ -8,6 +8,6 @@
 #ifndef __C105_H__
 #define __C105_H__
 
-#define BUFFER_SIZE 				1024
+
 
 #endif /* __C105_H__ */
