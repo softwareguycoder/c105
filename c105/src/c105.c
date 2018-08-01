@@ -32,7 +32,11 @@ int main(int argc, char* argv[]) {
 
 	printf("Setting up server address structure...\n");
 
-	SocketDemoUtils_populateAddressInfo(argv[1], "127.0.0.1", server, &port);
+	err = SocketDemoUtils_populateAddressInfo(argv[1], "127.0.0.1", server, &port);
+	if (err < 0) {
+		fprintf(stderr, "Could not populate the server address information\n");
+		print_errno("SocketDemoUtils_populateAddressInfo");
+	}
 
 	printf("Attempting to bind the server socket to the local machine's IP address and port...\n");
 
