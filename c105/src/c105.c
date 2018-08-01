@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 	 * using IPv4 as opposed to v6.
 	 */
 
-	printf("Setting up server address structure...\n");
+	printf("Setting up server address...\n");
 
 	err = SocketDemoUtils_populateAddressInfo(argv[1], "127.0.0.1", server, &port);
 	if (err < 0) {
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 		print_errno("SocketDemoUtils_populateAddressInfo");
 	}
 
-	printf("Attempting to bind the server socket to the local machine's IP address and port...\n");
+	printf("Binding server socket...\n");
 
 	/* Associate the server socket with the local machine and the specified port */
 
@@ -53,8 +53,6 @@ int main(int argc, char* argv[]) {
 	/* This is done for display purposes only */
 	char *ip = inet_ntoa(server.sin_addr);
 
-	printf("Server at IP address %s listening on port %d...\n", ip, port);
-
 	err = SocketDemoUtils_listen(server_fd, 128);
 	if (err < 0) {
 		fprintf(stderr, "Could not listen on port %d.\n", port);
@@ -62,9 +60,10 @@ int main(int argc, char* argv[]) {
 		exit(-1);
 	}
 
-	printf("Server is listening on port %d.\n", port);
+	printf("Server at IP address '%s' listening on port %d...\n", ip, port);
 
 	while(true) {
+
 		err = SocketDemoUtils_accept(server_fd, &client_fd, &client);
 		if (err < 0) {
 			fprintf(stderr, "Could not accept new client connection on port %d.\n", port);
