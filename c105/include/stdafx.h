@@ -20,6 +20,7 @@
 
 typedef enum {false,true} bool;
 
+#include <include/socket_errors.h>
 #include <include/inetsock_core.h>
 #include <include/conversion_core.h>
 #include <include/debug_core.h>
