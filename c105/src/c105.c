@@ -31,33 +31,20 @@ int main(int argc, char* argv[]) {
 	struct sockaddr_in server, client;
 	char buf[BUFFER_SIZE];
 
-	server_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_fd < 0) {
-		fprintf(stderr, "Could not create socket\n");
-		print_errno("socket");
-	}
+	server_fd = SocketDemoUtils_createTcpSocket();
 
 	/* Set up a structure to take the IP address the server is bound to.
 	 * Use the AF_INET IP address family in order to tell the system we are
 	 * using IPv4 as opposed to v6.
 	 */
 
-	printf("Setting up server address structure...");
+	printf("Setting up server address structure...\n");
 
-	server.sin_family = AF_INET;
-	server.sin_port = htons(port);    /* specify the port in network byte-ordering with htons (s for a short int) */
-	server.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	/* Make the server socket reusable */
-
-	printf("Setting options to allow the socket to be re-used for a different address later on...\n");
-
-	int opt_val = 1;
-	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
+	SocketDemoUtils_populateAddressInfo(argv[1], "127.0.0.1", server);
 
 	printf("Attempting to bind the server socket to the local machine's IP address and port...\n");
 
-	/* Associate the server socket with the local machine and the specifed port */
+	/* Associate the server socket with the local machine and the specified port */
 
 	err = bind(server_fd, (struct sockaddr*)&server, sizeof(server));
 	if (err < 0){
@@ -84,27 +71,14 @@ int main(int argc, char* argv[]) {
 		printf("New client connection has been accepted!  Client IP address is %s\n",
 				inet_ntoa(client.sin_addr));
 
-		/* prep some storage to hold the text from the client */
+		char *buffer = (char*)calloc(BUFFER_SIZE, sizeof(char));
+		char *current_chunk = (char*)calloc(BUFFER_SIZE, sizeof(char));
 
 		while(1) {
-			int read = recv(client_fd, buf, BUFFER_SIZE, 0);
+			int read = recv(client_fd, buffer, BUFFER_SIZE, 0);
 
-			if (!read) break;		// done reading
-			if (read < 0){
-				fprintf(stderr, "Client read failed\n");
-				print_errno("read");
-			}
+			if (read < 0) break;
 
-			for(int i = 0;i < read;i++) {
-				/* check if we need to stop */
-				if (buf[i] == '\0') {
-					break;
-				}
-			}
-
-
-			err = send(client_fd, buf, read, 0);
-			if (err < 0) on_error("Client write failed\n");
 		}
 
 		/* done communicating with the client */
