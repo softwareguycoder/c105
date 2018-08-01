@@ -21,7 +21,9 @@ int main(int argc, char* argv[]) {
 	int port = 0;
 
 	int server_fd, client_fd, err;
-	struct sockaddr_in server, client;
+	struct sockaddr_in server = {0}, client = {0};
+
+	log_info("Calling SocketDemoUtils_createTcpSocket");
 
 	server_fd = SocketDemoUtils_createTcpSocket();
 
@@ -30,19 +32,31 @@ int main(int argc, char* argv[]) {
 	 * using IPv4 as opposed to v6.
 	 */
 
-	printf("Setting up server address...\n");
+	log_info("main: Setting up server address...");
 
-	err = SocketDemoUtils_populateAddressInfo(argv[1], "127.0.0.1", server, &port);
+	err = SocketDemoUtils_populateAddressInfo(argv[1], "127.0.0.1", &server, &port);
+
+	log_info("main: err = %d", err);
+
 	if (err < 0) {
 		fprintf(stderr, "Could not populate the server address information\n");
 		print_errno("SocketDemoUtils_populateAddressInfo");
 	}
 
-	printf("Binding server socket...\n");
+	log_info("main: server.sin_port = %d", server.sin_port);
+
+	log_info("main: server.sin_addr = %lu", server.sin_addr);
+
+	log_info("main: server.sin_addr = '%s'", inet_ntoa(server.sin_addr));
+
+	log_info("main: Binding server socket...");
 
 	/* Associate the server socket with the local machine and the specified port */
 
 	err = SocketDemoUtils_bind(server_fd, &server);
+
+	log_info("main: err = %d", err);
+
 	if (err < 0) {
 		fprintf(stderr, "Could not bind server socket.\n");
 		print_errno("SocketDemoUtils_bind");
@@ -54,43 +68,64 @@ int main(int argc, char* argv[]) {
 	char *ip = inet_ntoa(server.sin_addr);
 
 	err = SocketDemoUtils_listen(server_fd, 128);
+
+	log_info("main: err = %d", err);
+
 	if (err < 0) {
 		fprintf(stderr, "Could not listen on port %d.\n", port);
 		print_errno("SocketDemoUtils_listen");
 		exit(-1);
 	}
 
-	printf("Server at IP address '%s' listening on port %d...\n", ip, port);
+	log_info("main: Server at IP address '%s' listening on port %d...", ip, port);
 
 	while(true) {
 
 		err = SocketDemoUtils_accept(server_fd, &client_fd, &client);
 		if (err < 0) {
-			fprintf(stderr, "Could not accept new client connection on port %d.\n", port);
+			fprintf(stderr, "Could not accept new client connection on port %d.", port);
 			print_errno("SocketDemoUtils_accept");
 			exit(-1);
 		}
 
 		if (client_fd < 0) on_error("Could not establish new connection\n");
 
-		printf("New client connection has been accepted!  Client IP address is %s\n",
+		log_info("New client connection has been accepted!  Client IP address is %s",
 				inet_ntoa(client.sin_addr));
 
 		char* data = NULL;
 
-		SocketDemoUtils_recv(client_fd, &data);
+		while(true){
 
-		if (data) {
-			/* data was received; display it */
-			fprintf(stdout, "From client: '%s'", data);
+			err = SocketDemoUtils_recv(client_fd, &data);
 
-			/* send the data back to the client */
-			err = SocketDemoUtils_send(client_fd, data, strlen(data) + 1);
+			log_info("main: err = %d", err);
+
+			log_info("Checking whether we received valid data...");
+
+			if (data) {
+				log_info("Valid data has been received.");
+
+				/* data was received; display it */
+				log_info("main: data = '%s'", data);
+
+				/* send the data back to the client */
+				err = SocketDemoUtils_send(client_fd, data, strlen(data) + 1);
+
+				log_info("main: err = %d", err);
+
+				if (strcmp(data, ".\n") == 0) {
+					/* done communicating with the client */
+					/* release system resources associated with the client socket */
+					close(client_fd);
+					break;
+				}
+
+				free(data);
+				data = NULL;
+			}
 		}
 
-		/* done communicating with the client */
-		/* release system resources associated with the client socket */
-		close(client_fd);
 	}
 
 	/* release system resources associated with the server socket */
